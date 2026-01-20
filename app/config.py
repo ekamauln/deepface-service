@@ -16,4 +16,4 @@ EMBEDDING_DIR = "models/embeddings"
 # Similarity threshold for face matching (0.0 to 1.0)
 # Higher = stricter matching, Lower = more lenient
 # Recommended: 0.4-0.5 for Facenet512, 0.6-0.7 for ArcFace
-THRESHOLD = 0.5
+THRESHOLD = 0.7

@@ -83,7 +83,7 @@ async def verify(image: UploadFile = File(...)):
                 f"✓ MATCH FOUND - User: {user_id}, Confidence: {score:.4f}")
         else:
             logger.info(
-                f"✗ NO MATCH - Best score: {score:.4f} (threshold: 0.5)")
+                f"✗ NO MATCH - Best score: {score:.4f} (threshold: 0.7)")
 
     finally:
         os.remove(filename)
