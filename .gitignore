@@ -1,2 +1,4 @@
 /env
 /models/embeddings/*.npy
+/__pycache__
+/app/__pycache__
