@@ -62,6 +62,11 @@ def get_embeddings():
     return _embedding_cache
 
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "Livotech Face Verification Service", "version": "1.0.0", "uptime": time.time()}
+
+
 @app.post("/verify")
 async def verify(image: UploadFile = File(...)):
     start_time = time.time()
@@ -122,3 +127,37 @@ async def register_face(
         logger.info(f"⏱️  Register request completed in {elapsed:.2f}s")
 
     return {"status": "registered", "userId": user_id}
+
+
+@app.post("/search")
+async def search_face(image: UploadFile = File(...)):
+    start_time = time.time()
+
+    if not image.content_type or not image.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Invalid image file")
+
+    filename = f"tmp/{uuid.uuid4()}.jpg"
+    with open(filename, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        embeddings = get_embeddings()
+        logger.info(f"Searching through {len(embeddings)} stored embeddings")
+        user_id, score, matched = verify_faces(filename, embeddings)
+
+        if matched:
+            logger.info(
+                f"✓ MATCH FOUND - User: {user_id}, Confidence: {score:.4f}")
+        else:
+            logger.info(
+                f"✗ NO MATCH - Best score: {score:.4f} (threshold: 0.7)")
+
+    finally:
+        os.remove(filename)
+        elapsed = time.time() - start_time
+        logger.info(f"⏱️  Search request completed in {elapsed:.2f}s")
+
+    if not matched:
+        return {"matched": False}
+
+    return {"matched": True, "userId": user_id, "confidence": score}
