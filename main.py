@@ -110,6 +110,11 @@ async def register_face(
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid image file")
 
+    # Check if embedding already exists
+    embedding_path = f"{EMBEDDING_DIR}/{user_id}.npy"
+    if os.path.exists(embedding_path):
+        raise HTTPException(status_code=409, detail=f"User '{user_id}' is already registered. Use /update endpoint to update the embedding.")
+
     file_path = f"tmp/{user_id}.jpg"
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
@@ -127,6 +132,61 @@ async def register_face(
         logger.info(f"⏱️  Register request completed in {elapsed:.2f}s")
 
     return {"status": "registered", "userId": user_id}
+
+
+@app.post("/update")
+async def update_face(
+    user_id: str = Form(...), image: UploadFile = File(...)
+):
+    start_time = time.time()
+
+    if not image.content_type or not image.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Invalid image file")
+
+    # Check if embedding exists
+    embedding_path = f"{EMBEDDING_DIR}/{user_id}.npy"
+    if not os.path.exists(embedding_path):
+        raise HTTPException(status_code=404, detail=f"Embedding for user '{user_id}' not found")
+
+    file_path = f"tmp/{user_id}_update.jpg"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        embedding = generate_embedding(file_path)
+        
+        import numpy as np
+        np.save(embedding_path, np.array(embedding))
+        logger.info(f"✓ Updated embedding for user: {user_id}")
+
+    finally:
+        os.remove(file_path)
+        elapsed = time.time() - start_time
+        logger.info(f"⏱️  Update request completed in {elapsed:.2f}s")
+
+    return {"status": "updated", "userId": user_id}
+
+
+@app.delete("/remove/{user_id}")
+async def remove_face(user_id: str):
+    start_time = time.time()
+
+    # Check if embedding exists
+    embedding_path = f"{EMBEDDING_DIR}/{user_id}.npy"
+    if not os.path.exists(embedding_path):
+        raise HTTPException(status_code=404, detail=f"Embedding for user '{user_id}' not found")
+
+    try:
+        os.remove(embedding_path)
+        logger.info(f"✓ Removed embedding for user: {user_id}")
+    except Exception as e:
+        logger.error(f"✗ Failed to remove embedding for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to remove embedding: {str(e)}")
+
+    elapsed = time.time() - start_time
+    logger.info(f"⏱️  Remove request completed in {elapsed:.2f}s")
+
+    return {"status": "removed", "userId": user_id}
 
 
 @app.post("/search")
@@ -161,3 +221,4 @@ async def search_face(image: UploadFile = File(...)):
         return {"matched": False}
 
     return {"matched": True, "userId": user_id, "confidence": score}
+
