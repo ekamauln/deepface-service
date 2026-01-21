@@ -4,7 +4,7 @@ import tempfile
 import logging
 from PIL import Image
 from deepface import DeepFace
-from app.config import MODEL_NAME, DETECTOR_BACKEND, THRESHOLD
+from config import MODEL_NAME, DETECTOR_BACKEND, THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 def initialize_models():
     """Preload DeepFace models on startup to avoid cold starts on first request"""
     logger.info("Preloading DeepFace models...")
-    
+
     # Create a dummy image to trigger model loading
     dummy_img = np.zeros((224, 224, 3), dtype=np.uint8)
     temp_path = tempfile.mktemp(suffix='.jpg')
-    
+
     try:
         Image.fromarray(dummy_img).save(temp_path)
         DeepFace.represent(
@@ -25,9 +25,11 @@ def initialize_models():
             detector_backend=DETECTOR_BACKEND,
             enforce_detection=False
         )
-        logger.info(f"✓ Models preloaded successfully ({MODEL_NAME} + {DETECTOR_BACKEND})")
+        logger.info(
+            f"✓ Models preloaded successfully ({MODEL_NAME} + {DETECTOR_BACKEND})")
     except Exception as e:
-        logger.warning(f"Model preloading failed (will load on first request): {e}")
+        logger.warning(
+            f"Model preloading failed (will load on first request): {e}")
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)

@@ -4,8 +4,8 @@ import uuid
 import os
 import logging
 
-from app.face_service import generate_embedding, verify_faces, initialize_models
-from app.config import EMBEDDING_DIR
+from face_service import generate_embedding, verify_faces, initialize_models
+from config import EMBEDDING_DIR
 import time
 
 logging.basicConfig(level=logging.INFO)
@@ -45,27 +45,27 @@ def load_embeddings():
 def get_embeddings():
     """Get embeddings with in-memory caching"""
     global _embedding_cache, _cache_timestamp
-    
+
     # Check if embeddings directory has been modified
     try:
         current_mtime = os.path.getmtime(EMBEDDING_DIR)
     except OSError:
         current_mtime = 0
-    
+
     # Reload cache if directory was modified or cache is empty
     if current_mtime > _cache_timestamp or not _embedding_cache:
         logger.info("Reloading embeddings from disk...")
         _embedding_cache = load_embeddings()
         _cache_timestamp = current_mtime
         logger.info(f"Loaded {len(_embedding_cache)} embeddings into cache")
-    
+
     return _embedding_cache
 
 
 @app.post("/verify")
 async def verify(image: UploadFile = File(...)):
     start_time = time.time()
-    
+
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid image file")
 
@@ -101,7 +101,7 @@ async def register_face(
     user_id: str = Form(...), image: UploadFile = File(...)
 ):
     start_time = time.time()
-    
+
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid image file")
 
