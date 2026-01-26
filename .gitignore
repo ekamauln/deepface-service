@@ -2,3 +2,4 @@
 /models/embeddings/*.npy
 /__pycache__
 /app/__pycache__
+*.txt
