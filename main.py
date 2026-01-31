@@ -44,7 +44,7 @@ def load_embeddings():
                 __import__("numpy").load(f"{EMBEDDING_DIR}/{file}")
             )
         except (EOFError, ValueError) as e:
-            print(f"Warning: Skipping corrupted embedding file {file}: {e}")
+            print(f"Peringatan: Berkas embedding terdeteksi rusak dan tidak {file}: {e}")
             continue
     return embeddings
 
@@ -64,7 +64,7 @@ def get_embeddings():
         write_log("Reloading embeddings from disk...")
         _embedding_cache = load_embeddings()
         _cache_timestamp = current_mtime
-        write_log(f"Loaded {len(_embedding_cache)} embeddings into cache")
+        write_log(f"Memuat {len(_embedding_cache)} embeddings ke cache")
 
     return _embedding_cache
 
@@ -92,20 +92,20 @@ async def verify(image: UploadFile = File(...)):
 
     try:
         embeddings = get_embeddings()
-        write_log(f"Using {len(embeddings)} stored embeddings")
+        write_log(f"Menggunakan {len(embeddings)} embedding yang tersimpan")
         user_id, score, matched = verify_faces(filename, embeddings)
 
         if matched:
             write_log(
-                f"✓ MATCH FOUND - User: {user_id}, Confidence: {score:.4f}")
+                f"✓ KECOCOKAN DITEMUKAN - Pengguna: {user_id}, Tingkat keyakinan: {score:.4f}")
         else:
             write_log(
-                f"✗ NO MATCH - Best score: {score:.4f} (threshold: 0.7)")
+                f"✗ TIDAK ADA KECOCOKAN - Skor terbaik: {score:.4f} (ambang batas: 0.7)")
 
     finally:
         os.remove(filename)
         elapsed = time.time() - start_time
-        write_log(f"⏱️  Verify request completed in {elapsed:.2f}s")
+        write_log(f"⏱️  Permintaan verifikasi selesai dalam {elapsed:.2f}s")
 
     if not matched:
         return {"matched": False}
@@ -126,7 +126,7 @@ async def register_face(
     embedding_path = f"{EMBEDDING_DIR}/{user_id}.npy"
     if os.path.exists(embedding_path):
         raise HTTPException(
-            status_code=409, detail=f"User '{user_id}' is already registered. Use /update endpoint to update the embedding.")
+            status_code=409, detail=f"Pengguna '{user_id}' suda terdaftar.Gunakan/update untuk memperbarui.")
 
     file_path = f"tmp/{user_id}.jpg"
     with open(file_path, "wb") as buffer:
@@ -142,7 +142,7 @@ async def register_face(
     finally:
         os.remove(file_path)
         elapsed = time.time() - start_time
-        write_log(f"⏱️  Register request completed in {elapsed:.2f}s")
+        write_log(f"⏱️  Permintaan pendaftaran selesai dalam {elapsed:.2f}s")
 
     return {"status": "registered", "userId": user_id}
 
@@ -161,7 +161,7 @@ async def update_face(
     embedding_path = f"{EMBEDDING_DIR}/{user_id}.npy"
     if not os.path.exists(embedding_path):
         raise HTTPException(
-            status_code=404, detail=f"Embedding for user '{user_id}' not found")
+            status_code=404, detail=f"Embedding untuk pengguna '{user_id}' tidak ditemukan")
 
     file_path = f"tmp/{user_id}_update.jpg"
     with open(file_path, "wb") as buffer:
@@ -177,12 +177,12 @@ async def update_face(
         _cache_timestamp = 0
         _embedding_cache = {}
 
-        write_log(f"✓ Updated embedding for user: {user_id}")
+        write_log(f"✓ Embendding pengguna berhasil diperbarui: {user_id}")
 
     finally:
         os.remove(file_path)
         elapsed = time.time() - start_time
-        write_log(f"⏱️  Update request completed in {elapsed:.2f}s")
+        write_log(f"⏱️  Proses pembaruan selesai dalam {elapsed:.2f}s")
 
     return {"status": "updated", "userId": user_id}
 
@@ -196,7 +196,7 @@ async def remove_face(user_id: str):
     embedding_path = f"{EMBEDDING_DIR}/{user_id}.npy"
     if not os.path.exists(embedding_path):
         raise HTTPException(
-            status_code=404, detail=f"Embedding for user '{user_id}' not found")
+            status_code=404, detail=f"Embedding untuk pengguna '{user_id}' tidak ditemukan")
 
     try:
         os.remove(embedding_path)
@@ -205,14 +205,14 @@ async def remove_face(user_id: str):
         _cache_timestamp = 0
         _embedding_cache = {}
 
-        write_log(f"✓ Removed embedding for user: {user_id}")
+        write_log(f"✓ Berhasil menghapus embedding untuk pengguna: {user_id}")
     except Exception as e:
-        write_log(f"✗ Failed to remove embedding for user {user_id}: {e}")
+        write_log(f"✗ Gagal menghapus embedding untuk pengguna {user_id}: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to remove embedding: {str(e)}")
+            status_code=500, detail=f"Gagal menghapus embedding: {str(e)}")
 
     elapsed = time.time() - start_time
-    write_log(f"⏱️  Remove request completed in {elapsed:.2f}s")
+    write_log(f"⏱️  Proses penghapusan selesai dalam {elapsed:.2f}s")
 
     return {"status": "removed", "userId": user_id}
 
@@ -230,20 +230,20 @@ async def search_face(image: UploadFile = File(...)):
 
     try:
         embeddings = get_embeddings()
-        write_log(f"Searching through {len(embeddings)} stored embeddings")
+        write_log(f"Mencari melalui {len(embeddings)} embedding yang tersimpan")
         user_id, score, matched = verify_faces(filename, embeddings)
 
         if matched:
             write_log(
-                f"MATCH FOUND - User: {user_id}, Confidence: {score:.4f}")
+                f"KECOCOKAN DITEMUKAN - Pengguna: {user_id}, Tingkat keyakinan: {score:.4f}")
         else:
             write_log(
-                f"NO MATCH - Best score: {score:.4f} (threshold: 0.7)")
+                f"TIDAK ADA KECOCOKAN - Skor Terbaik: {score:.4f} (ambang batas: 0.7)")
 
     finally:
         os.remove(filename)
         elapsed = time.time() - start_time
-        write_log(f"Search request completed in {elapsed:.2f}s")
+        write_log(f"Permintaan pencarian selesai dalam {elapsed:.2f}s")
 
     if not matched:
         return {"matched": False}

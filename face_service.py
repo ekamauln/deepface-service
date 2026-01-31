@@ -26,10 +26,10 @@ def initialize_models():
             enforce_detection=False
         )
         logger.info(
-            f"✓ Models preloaded successfully ({MODEL_NAME} + {DETECTOR_BACKEND})")
+            f"✓ Model berhasil dibuat sebelumnya ({MODEL_NAME} + {DETECTOR_BACKEND})")
     except Exception as e:
         logger.warning(
-            f"Model preloading failed (will load on first request): {e}")
+            f"Pra-muatan model gagal (akan dimuat saat perminataan pertama): {e}")
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
